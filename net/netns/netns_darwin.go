@@ -37,6 +37,12 @@ var errInterfaceStateInvalid = errors.New("interface state invalid")
 // controlLogf binds c to a particular interface as necessary to dial the
 // provided (network, address).
 func controlLogf(logf logger.Logf, netMon *netmon.Monitor, network, address string, c syscall.RawConn) error {
+	if bypassForeignTunnels.Load() {
+		if isLocalhost(address) {
+			return nil
+		}
+		return bypassControlDarwin(logf, network, address, c)
+	}
 	if disableBindConnToInterface.Load() || (version.IsMacGUIVariant() && disableBindConnToInterfaceAppleExt.Load()) {
 		return nil
 	}

@@ -58,6 +58,10 @@ func controlC(logf logger.Logf, network, address string, c syscall.RawConn) (err
 		return nil
 	}
 
+	if bypassForeignTunnels.Load() {
+		return bypassControlWindows(logf, network, address, c)
+	}
+
 	canV4, canV6 := false, false
 	switch network {
 	case "tcp", "udp":

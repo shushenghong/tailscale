@@ -84,6 +84,37 @@ func SetDisableBindConnToInterfaceAppleExt(logf logger.Logf, v bool) {
 	}
 }
 
+var bypassForeignTunnels atomic.Bool
+
+// SetBypassForeignTunnels enables or disables "foreign tunnel bypass" mode
+// on macOS and Windows. It has no effect on other platforms, or when netns
+// is disabled via SetEnabled(false).
+//
+// A foreign tunnel is a non-Tailscale virtual interface (a proxy TUN such as
+// Clash/sing-box, or a full-tunnel VPN) whose routes cover more than half of
+// the IPv4 address space. Re-sending UDP through such an interface puts an
+// extra, unstable NAT in front of the socket, which defeats NAT traversal.
+//
+// When enabled, the platform's normal "bind to the default route interface"
+// behavior is replaced by:
+//
+//   - a dialed connection whose destination is routed via a foreign tunnel,
+//     or a listening socket while any foreign tunnel exists, is bound to the
+//     best non-virtual interface that holds a default route;
+//   - everything else is left unbound and follows the system routing table,
+//     so split-tunnel VPN routes (e.g. 10.0.0.0/8 via a corporate VPN) are
+//     respected;
+//   - if no non-virtual default route exists, nothing is bound (the machine
+//     can only reach the network through the tunnel).
+//
+// Full-tunnel VPNs are indistinguishable from proxy TUNs by routes alone;
+// callers that must keep all traffic inside such a VPN should leave this off.
+func SetBypassForeignTunnels(logf logger.Logf, v bool) {
+	if bypassForeignTunnels.Swap(v) != v {
+		logf("netns: bypassForeignTunnels changed to %v", v)
+	}
+}
+
 // Listener returns a new net.Listener with its Control hook func
 // initialized as necessary to run in logical network namespace that
 // doesn't route back into Tailscale.
