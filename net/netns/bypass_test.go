@@ -127,3 +127,16 @@ func TestLookupRoute(t *testing.T) {
 		t.Errorf("v4-mapped LAN: got %d, want Wi-Fi", idx)
 	}
 }
+
+func TestBypassAppliesToUDPOnly(t *testing.T) {
+	for _, n := range []string{"udp", "udp4", "udp6"} {
+		if !bypassAppliesTo(n) {
+			t.Errorf("bypassAppliesTo(%q) = false, want true", n)
+		}
+	}
+	for _, n := range []string{"tcp", "tcp4", "tcp6", "ip4:icmp", ""} {
+		if bypassAppliesTo(n) {
+			t.Errorf("bypassAppliesTo(%q) = true, want false", n)
+		}
+	}
+}

@@ -15,6 +15,9 @@ import (
 // bypassControlWindows is controlC's replacement in foreign tunnel bypass
 // mode; see SetBypassForeignTunnels.
 func bypassControlWindows(logf logger.Logf, network, address string, c syscall.RawConn) error {
+	if !bypassAppliesTo(network) {
+		return nil // TCP follows the system routes; see bypassAppliesTo
+	}
 	routes, err := windowsBypassRoutes()
 	if err != nil {
 		bypassLog.logf(logf, "netns: bypass: reading routes: %v; leaving sockets unbound", err)

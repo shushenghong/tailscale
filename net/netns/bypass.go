@@ -102,6 +102,25 @@ func lookupRoute(routes []bypassRoute, addr netip.Addr) (idx uint32, ok bool) {
 	return best.IfIndex, ok
 }
 
+// bypassAppliesTo reports whether a socket of the given network takes part
+// in foreign tunnel bypass at all. Only UDP does.
+//
+// The bypass exists for NAT traversal: a proxy TUN re-sends UDP from its own
+// socket, so STUN reports the proxy's mapping and hole punching fails. TCP
+// (DERP, HTTPS) has no such problem, and binding it to the physical NIC
+// takes away the one thing the proxy is good at: on some networks direct
+// TLS connections to overseas relays get reset every 30-70s (observed on a
+// Windows client in China, while the same connection through the proxy was
+// stable). A flapping DERP connection then also drops the disco messages
+// that set up the direct path, so binding TCP costs both paths.
+func bypassAppliesTo(network string) bool {
+	switch network {
+	case "udp", "udp4", "udp6":
+		return true
+	}
+	return false
+}
+
 // bypassRoutedVia returns the interface a socket for address would be routed
 // through, as input for bypassInterface: 0 for a listening socket (empty or
 // unspecified host) and for IPv6 destinations, which are judged like a

@@ -96,7 +96,8 @@ var bypassForeignTunnels atomic.Bool
 // extra, unstable NAT in front of the socket, which defeats NAT traversal.
 //
 // When enabled, the platform's normal "bind to the default route interface"
-// behavior is replaced by:
+// behavior is replaced by the following for UDP sockets, while TCP sockets
+// (DERP, HTTPS) are left unbound and may go through the tunnel:
 //
 //   - a dialed connection whose destination is routed via a foreign tunnel,
 //     or a listening socket while any foreign tunnel exists, is bound to the
